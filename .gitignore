@@ -5,4 +5,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Jetbrains IDE
+.idea
+
+# Claude spec
 SPEC.md
