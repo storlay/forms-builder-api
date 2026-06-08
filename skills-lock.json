@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mongodb": {
+      "source": "RightNow-AI/openfang",
+      "sourceType": "github",
+      "skillPath": "crates/openfang-skills/bundled/mongodb/SKILL.md",
+      "computedHash": "835fa9d46df94142b48112350a80da9fe52a71ffa7b1f033a7df7b1b68e29241"
+    }
+  }
+}
