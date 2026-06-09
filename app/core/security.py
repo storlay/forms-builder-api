@@ -4,11 +4,12 @@ from datetime import timedelta
 
 import jwt
 from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
 
 from app.core.config import settings
 
 
-_password_hash = PasswordHash.recommended()
+_password_hash = PasswordHash((Argon2Hasher(),))
 
 
 def hash_password(password: str) -> str:
