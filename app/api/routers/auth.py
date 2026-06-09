@@ -9,7 +9,10 @@ from app.schemas.auth import TokenResponse
 from app.schemas.auth import UserResponse
 
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"],
+)
 
 
 @router.post(
@@ -36,7 +39,10 @@ async def login(
     payload: LoginRequest,
     service: AuthServiceDep,
 ) -> TokenResponse:
-    token = await service.authenticate(payload.email, payload.password)
+    token = await service.authenticate(
+        payload.email,
+        payload.password,
+    )
     return TokenResponse(access_token=token)
 
 

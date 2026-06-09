@@ -4,6 +4,7 @@ import jwt
 from bson import ObjectId
 from fastapi import Depends
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi import status
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.security import HTTPBearer
@@ -11,6 +12,7 @@ from fastapi.security import HTTPBearer
 from app.core.db import DbDep
 from app.core.exceptions import FileNotFound
 from app.core.exceptions import FormNotFound
+from app.core.exceptions import RateLimitExceeded
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.repositories.files_repo import FilesRepository
@@ -107,3 +109,14 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def rate_limit_public(request: Request) -> None:
+    """Throttle anonymous endpoints per client IP; raises 429 when exceeded."""
+    limiter = request.app.state.public_limiter
+    client = request.client.host if request.client else "unknown"
+    if not limiter.allow(client):
+        raise RateLimitExceeded
+
+
+RateLimited = Depends(rate_limit_public)

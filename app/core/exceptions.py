@@ -40,6 +40,16 @@ class FileNotFound(AppError):
     detail = "File not found"
 
 
+class FileTooLarge(AppError):
+    status_code = status.HTTP_413_CONTENT_TOO_LARGE
+    detail = "Uploaded file is too large"
+
+
+class RateLimitExceeded(AppError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    detail = "Too many requests"
+
+
 class ResponseValidationError(AppError):
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     detail = "Response validation failed"

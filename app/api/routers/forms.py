@@ -76,11 +76,18 @@ async def update_form(
     user: CurrentUser,
     service: FormServiceDep,
 ) -> FormResponse:
-    form = await service.update(form_id, user.id, payload)
+    form = await service.update(
+        form_id,
+        user.id,
+        payload,
+    )
     return FormResponse.model_validate(form)
 
 
-@router.post("/{form_id}/publish", response_model=FormResponse)
+@router.post(
+    "/{form_id}/publish",
+    response_model=FormResponse,
+)
 async def publish_form(
     form_id: FormId,
     user: CurrentUser,
@@ -90,7 +97,10 @@ async def publish_form(
     return FormResponse.model_validate(form)
 
 
-@router.post("/{form_id}/close", response_model=FormResponse)
+@router.post(
+    "/{form_id}/close",
+    response_model=FormResponse,
+)
 async def close_form(
     form_id: FormId,
     user: CurrentUser,
@@ -100,7 +110,10 @@ async def close_form(
     return FormResponse.model_validate(form)
 
 
-@router.delete("/{form_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{form_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_form(
     form_id: FormId,
     user: CurrentUser,

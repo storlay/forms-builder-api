@@ -21,5 +21,12 @@ class Settings(BaseSettings):
     # Draft responses live until expires_at, then a TTL index removes them.
     draft_ttl_seconds: int = 7 * 24 * 3600
 
+    # Anonymous public surface (submit/draft/upload): per-IP request budget.
+    public_rate_limit: int = 30
+    public_rate_window_seconds: int = 60
+
+    # Hard cap on a single uploaded file; protects the anonymous upload endpoint.
+    max_upload_bytes: int = 5 * 1024 * 1024
+
 
 settings = Settings()

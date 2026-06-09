@@ -6,7 +6,10 @@ from app.api.deps import FormId
 from app.schemas.analytics import FormAnalyticsResponse
 
 
-router = APIRouter(prefix="/forms", tags=["analytics"])
+router = APIRouter(
+    prefix="/forms",
+    tags=["analytics"],
+)
 
 
 @router.get(

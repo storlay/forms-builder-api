@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentUser
 from app.api.deps import FormId
+from app.api.deps import RateLimited
 from app.api.deps import ResponseServiceDep
 from app.schemas.response import DraftRequest
 from app.schemas.response import DraftResult
@@ -32,7 +33,10 @@ def _build_meta(request: Request) -> dict[str, str]:
     }
 
 
-@router.get("/f/{form_id}", response_model=PublicFormResponse)
+@router.get(
+    "/f/{form_id}",
+    response_model=PublicFormResponse,
+)
 async def get_public_form(
     form_id: FormId,
     service: ResponseServiceDep,
@@ -45,6 +49,7 @@ async def get_public_form(
     "/f/{form_id}/responses",
     response_model=SubmitResult,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[RateLimited],
 )
 async def submit_response(
     form_id: FormId,
@@ -52,11 +57,18 @@ async def submit_response(
     request: Request,
     service: ResponseServiceDep,
 ) -> SubmitResult:
-    response = await service.submit(form_id, payload.answers, _build_meta(request))
+    response = await service.submit(
+        form_id,
+        payload.answers,
+        _build_meta(request),
+    )
     return SubmitResult.model_validate(response)
 
 
-@router.get("/forms/{form_id}/responses", response_model=ResponseListResponse)
+@router.get(
+    "/forms/{form_id}/responses",
+    response_model=ResponseListResponse,
+)
 async def list_responses(
     form_id: FormId,
     user: CurrentUser,
@@ -83,7 +95,11 @@ async def export_responses(
     service: ResponseServiceDep,
     export_format: Annotated[ExportFormat, Query(alias="format")] = ExportFormat.CSV,
 ) -> StreamingResponse:
-    media_type, filename, stream = await service.export(form_id, user.id, export_format)
+    media_type, filename, stream = await service.export(
+        form_id,
+        user.id,
+        export_format,
+    )
     return StreamingResponse(
         stream,
         media_type=media_type,
@@ -95,11 +111,15 @@ async def export_responses(
     "/f/{form_id}/draft",
     response_model=DraftResult,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[RateLimited],
 )
 async def save_draft(
     form_id: FormId,
     payload: DraftRequest,
     service: ResponseServiceDep,
 ) -> DraftResult:
-    draft = await service.save_draft(form_id, payload.answers)
+    draft = await service.save_draft(
+        form_id,
+        payload.answers,
+    )
     return DraftResult.model_validate(draft)

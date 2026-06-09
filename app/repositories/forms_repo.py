@@ -58,7 +58,9 @@ class FormsRepository:
     async def update(self, form_id: ObjectId, changes: dict[str, Any]) -> Form:
         changes["updated_at"] = datetime.now(UTC)
         doc = await self._forms.find_one_and_update(
-            {"_id": form_id}, {"$set": changes}, return_document=ReturnDocument.AFTER
+            {"_id": form_id},
+            {"$set": changes},
+            return_document=ReturnDocument.AFTER,
         )
         return Form.model_validate(doc)
 
@@ -67,7 +69,10 @@ class FormsRepository:
         await self._versions.delete_many({"form_id": form_id})
 
     async def add_version_snapshot(
-        self, form_id: ObjectId, version: int, fields: list[dict[str, Any]]
+        self,
+        form_id: ObjectId,
+        version: int,
+        fields: list[dict[str, Any]],
     ) -> None:
         await self._versions.insert_one(
             {

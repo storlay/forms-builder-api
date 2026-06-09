@@ -13,6 +13,7 @@ from app.api.routers import health
 from app.api.routers import responses
 from app.core.config import settings
 from app.core.exceptions import AppError
+from app.core.rate_limit import SlidingWindowRateLimiter
 from app.db.indexes import ensure_indexes
 
 
@@ -30,6 +31,10 @@ async def lifespan(_app: FastAPI):
     client: AsyncMongoClient = AsyncMongoClient(settings.mongo_uri)
     _app.state.client = client
     _app.state.db = client[settings.mongo_db]
+    _app.state.public_limiter = SlidingWindowRateLimiter(
+        settings.public_rate_limit,
+        settings.public_rate_window_seconds,
+    )
     await ensure_indexes(_app.state.db)
     yield
     await client.close()
