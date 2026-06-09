@@ -40,6 +40,7 @@ The model is built with `extra="forbid"`, so respondents can't smuggle unknown k
 - **GridFS uploads** — files are streamed in/out and tied to their form; a response can't reference a file uploaded for a different form.
 - **TTL drafts** — "save and continue later" responses expire themselves via a TTL index on `expires_at`.
 - **Defensive authorization** — not-found and not-owned both return `404`, so form existence isn't disclosed to non-owners.
+- **Rate-limited public surface** — anonymous submit/draft/upload endpoints run behind a per-IP sliding-window limiter, and uploads are read in capped chunks so an oversized body is rejected before it's buffered.
 
 ## Stack
 
@@ -61,7 +62,7 @@ API (routers)  ->  services (business logic)  ->  repositories (Mongo access)  -
 ```
 app/
   main.py            # app factory, lifespan (connect + ensure_indexes), error handler
-  core/              # config, security (JWT / argon2), db, exceptions
+  core/              # config, security (JWT / argon2), db, exceptions, rate limiter
   models/            # domain models (Pydantic) — own the _id <-> id mapping
   schemas/           # request/response DTOs
   repositories/      # Mongo access: forms, responses, users, files (GridFS)
@@ -116,6 +117,9 @@ uv run uvicorn app.main:app --reload
 | `JWT_ALGORITHM` | JWT algorithm | `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | access token lifetime | `30` |
 | `DRAFT_TTL_SECONDS` | draft lifetime | `604800` (7 days) |
+| `PUBLIC_RATE_LIMIT` | requests per window per IP on public endpoints | `30` |
+| `PUBLIC_RATE_WINDOW_SECONDS` | rate-limit window | `60` |
+| `MAX_UPLOAD_BYTES` | hard cap on a single uploaded file | `5242880` (5 MiB) |
 
 ## Tests & lint
 
