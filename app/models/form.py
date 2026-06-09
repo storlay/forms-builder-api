@@ -47,6 +47,8 @@ class FormField(BaseModel):
 class FormSettings(BaseModel):
     accepting_responses: bool = True
     response_limit: int | None = None
+    max_file_size_bytes: int | None = Field(default=None, gt=0)
+    allowed_file_types: list[str] | None = None
 
 
 class Form(BaseModel):

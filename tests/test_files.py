@@ -78,6 +78,36 @@ async def test_upload_to_closed_409(client: AsyncClient, auth_headers) -> None:
     assert (await upload(client, form_id)).status_code == 409
 
 
+async def test_upload_rejects_disallowed_type_415(client: AsyncClient, auth_headers) -> None:
+    form_id = await make_form(
+        client,
+        auth_headers,
+        settings={"allowed_file_types": ["application/pdf"]},
+    )
+    resp = await upload(client, form_id, content_type="text/plain")
+    assert resp.status_code == 415, resp.text
+
+
+async def test_upload_allows_whitelisted_type(client: AsyncClient, auth_headers) -> None:
+    form_id = await make_form(
+        client,
+        auth_headers,
+        settings={"allowed_file_types": ["text/plain"]},
+    )
+    assert (await upload(client, form_id, content_type="text/plain")).status_code == 201
+
+
+async def test_upload_rejects_oversized_file_413(client: AsyncClient, auth_headers) -> None:
+    form_id = await make_form(client, auth_headers, settings={"max_file_size_bytes": 10})
+    resp = await upload(client, form_id, content=b"x" * 11)
+    assert resp.status_code == 413, resp.text
+
+
+async def test_upload_within_form_size_limit_ok(client: AsyncClient, auth_headers) -> None:
+    form_id = await make_form(client, auth_headers, settings={"max_file_size_bytes": 100})
+    assert (await upload(client, form_id, content=b"x" * 50)).status_code == 201
+
+
 async def test_submit_with_file_enriches_value(
     client: AsyncClient,
     auth_headers,

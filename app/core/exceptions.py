@@ -45,6 +45,11 @@ class FileTooLarge(AppError):
     detail = "Uploaded file is too large"
 
 
+class FileTypeNotAllowed(AppError):
+    status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    detail = "File type is not allowed"
+
+
 class RateLimitExceeded(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     detail = "Too many requests"

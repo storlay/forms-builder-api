@@ -2,6 +2,8 @@ from bson import ObjectId
 from gridfs.asynchronous.grid_file import AsyncGridOut
 
 from app.core.exceptions import FileNotFound
+from app.core.exceptions import FileTooLarge
+from app.core.exceptions import FileTypeNotAllowed
 from app.core.exceptions import FormNotFound
 from app.core.exceptions import FormStateError
 from app.models.form import FormStatus
@@ -28,6 +30,12 @@ class FileService:
             raise FormNotFound
         if form.status == FormStatus.CLOSED or not form.settings.accepting_responses:
             raise FormStateError("Form is not accepting responses")
+        allowed = form.settings.allowed_file_types
+        if allowed is not None and content_type not in allowed:
+            raise FileTypeNotAllowed
+        max_size = form.settings.max_file_size_bytes
+        if max_size is not None and len(data) > max_size:
+            raise FileTooLarge
         return await self._files.upload(
             filename=filename,
             source=data,
