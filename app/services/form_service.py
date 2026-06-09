@@ -57,10 +57,10 @@ class FormService:
             raise FormStateError("Closed form cannot be edited")
 
         changes = payload.model_dump(exclude_unset=True)
-        schema_changed = "fields" in changes
-        if schema_changed:
+        schema_changed = payload.fields is not None
+        if payload.fields is not None:
             changes["fields"] = _serialize_fields(payload.fields)
-        if "settings" in changes:
+        if payload.settings is not None:
             changes["settings"] = payload.settings.model_dump()
 
         # A published form is frozen: editing its schema forks a new version + snapshot.

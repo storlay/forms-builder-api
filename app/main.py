@@ -17,7 +17,8 @@ from app.core.rate_limit import SlidingWindowRateLimiter
 from app.db.indexes import ensure_indexes
 
 
-async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, AppError)
     content = {"detail": exc.detail}
     errors = getattr(exc, "errors", None)
     if errors is not None:

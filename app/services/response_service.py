@@ -100,7 +100,9 @@ def build_answer_model(
     arbitrary data into the stored document. With partial=True every field is
     optional (draft saves), but provided values are still type-checked.
     """
-    definitions = {field.key: _field_definition(field, partial=partial) for field in fields}
+    definitions: dict[str, Any] = {
+        field.key: _field_definition(field, partial=partial) for field in fields
+    }
     return create_model(
         "DynamicAnswerModel",
         __config__=ConfigDict(extra="forbid"),
