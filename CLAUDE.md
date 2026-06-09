@@ -68,7 +68,7 @@ clarifying questions come before implementation rather than after mistakes.
 
 ---
 
-# Project: React Landing Page
+# Project: FastAPI Form Builder 
 
 FastAPI + MongoDB
 . Reply concisely in Russian.
