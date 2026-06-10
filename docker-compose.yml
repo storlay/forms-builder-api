@@ -8,7 +8,6 @@ services:
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      # Инициируем single-node replica set при первом старте, затем проверяем готовность.
       test: >
         mongosh --quiet --eval "try { rs.status().ok } catch (e) {
         rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }"
@@ -22,11 +21,9 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    # Secrets (JWT_SECRET, ...) come from a host .env in prod; optional in dev.
     env_file:
       - path: .env
         required: false
-    # Container-network values override anything from .env (env_file < environment).
     environment:
       MONGO_URI: mongodb://mongo:27017/?directConnection=true
       MONGO_DB: forms
