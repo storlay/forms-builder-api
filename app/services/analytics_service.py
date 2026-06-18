@@ -1,19 +1,23 @@
+from typing import TYPE_CHECKING
 from typing import Any
-
-from bson import ObjectId
 
 from app.core.exceptions import FormNotFound
 from app.models.form import FieldType
-from app.models.form import Form
-from app.models.form import FormField
-from app.repositories.forms_repo import FormsRepository
-from app.repositories.responses_repo import ResponsesRepository
 from app.schemas.analytics import ChoiceCount
 from app.schemas.analytics import FieldSummary
 from app.schemas.analytics import FormAnalyticsResponse
 from app.schemas.analytics import HistogramBucket
 from app.schemas.analytics import NumericStats
 from app.schemas.analytics import TimelinePoint
+
+
+if TYPE_CHECKING:
+    from bson import ObjectId
+
+    from app.models.form import Form
+    from app.models.form import FormField
+    from app.repositories.forms_repo import FormsRepository
+    from app.repositories.responses_repo import ResponsesRepository
 
 
 _CHOICE_TYPES = (FieldType.SINGLE_CHOICE, FieldType.MULTI_CHOICE)
@@ -34,7 +38,7 @@ def _histogram(edges: list[float], rows: list[dict[str, Any]]) -> list[Histogram
 
 
 def _field_summary(
-    field: FormField,
+    field: "FormField",
     facet: dict[str, Any],
     index: int,
     boundaries: dict[str, list[float]],
@@ -61,7 +65,7 @@ def _field_summary(
 
 
 def _build_response(
-    form: Form, facet: dict[str, Any], boundaries: dict[str, list[float]]
+    form: "Form", facet: dict[str, Any], boundaries: dict[str, list[float]]
 ) -> FormAnalyticsResponse:
     total_row = _first(facet.get("_total", []))
     timeline = [
@@ -78,14 +82,14 @@ def _build_response(
 
 
 class AnalyticsService:
-    def __init__(self, forms: FormsRepository, responses: ResponsesRepository) -> None:
+    def __init__(self, forms: "FormsRepository", responses: "ResponsesRepository") -> None:
         self._forms = forms
         self._responses = responses
 
     async def get_summary(
         self,
-        form_id: ObjectId,
-        owner_id: ObjectId,
+        form_id: "ObjectId",
+        owner_id: "ObjectId",
     ) -> FormAnalyticsResponse:
         form = await self._forms.get_by_id(form_id)
         # Not-found and not-owned both map to 404 so form existence is not disclosed.

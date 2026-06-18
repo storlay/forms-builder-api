@@ -1,16 +1,21 @@
 from collections.abc import AsyncIterator
 from datetime import UTC
 from datetime import datetime
+from typing import TYPE_CHECKING
 from typing import Any
 
-from bson import ObjectId
 from pymongo import DESCENDING
-from pymongo.asynchronous.database import AsyncDatabase
 
 from app.models.form import FieldType
-from app.models.form import FormField
 from app.models.response import DraftResponse
 from app.models.response import Response
+
+
+if TYPE_CHECKING:
+    from bson import ObjectId
+    from pymongo.asynchronous.database import AsyncDatabase
+
+    from app.models.form import FormField
 
 
 _HIST_BUCKETS = 5
@@ -18,7 +23,7 @@ _CHOICE_TYPES = (FieldType.SINGLE_CHOICE, FieldType.MULTI_CHOICE)
 _NUMERIC_TYPES = (FieldType.NUMBER, FieldType.RATING)
 
 
-def _histogram_boundaries(field: FormField) -> list[float]:
+def _histogram_boundaries(field: "FormField") -> list[float]:
     """Evenly spaced $bucket boundaries derived from a field's validation range.
 
     The top boundary is extended by one bucket width so the maximum value is
@@ -37,7 +42,7 @@ def _histogram_boundaries(field: FormField) -> list[float]:
 
 
 def _build_facets(
-    fields: list[FormField],
+    fields: "list[FormField]",
 ) -> tuple[dict[str, Any], dict[str, list[float]]]:
     """Build one $facet branch per metric so the whole summary runs in a single pass.
 
@@ -98,14 +103,14 @@ def _build_facets(
 
 
 class ResponsesRepository:
-    def __init__(self, db: AsyncDatabase) -> None:
+    def __init__(self, db: "AsyncDatabase") -> None:
         self._responses = db.responses
         self._drafts = db.draft_responses
 
     async def create(
         self,
         *,
-        form_id: ObjectId,
+        form_id: "ObjectId",
         form_version: int,
         answers: list[dict[str, Any]],
         meta: dict[str, Any],
@@ -123,9 +128,9 @@ class ResponsesRepository:
 
     async def list_by_form(
         self,
-        form_id: ObjectId,
+        form_id: "ObjectId",
         limit: int,
-        cursor: tuple[datetime, ObjectId] | None,
+        cursor: "tuple[datetime, ObjectId] | None",
     ) -> list[Response]:
         """Keyset page of responses, newest first, sorted by (submitted_at, _id).
 
@@ -147,7 +152,7 @@ class ResponsesRepository:
         )
         return [Response.model_validate(doc) async for doc in rows]
 
-    async def iter_by_form(self, form_id: ObjectId) -> AsyncIterator[Response]:
+    async def iter_by_form(self, form_id: "ObjectId") -> AsyncIterator[Response]:
         """Stream every response for a form, newest first, for export.
 
         Yields documents one at a time so the export endpoint can stream rows
@@ -162,7 +167,7 @@ class ResponsesRepository:
     async def create_draft(
         self,
         *,
-        form_id: ObjectId,
+        form_id: "ObjectId",
         answers: list[dict[str, Any]],
         expires_at: datetime,
     ) -> DraftResponse:
@@ -173,8 +178,8 @@ class ResponsesRepository:
 
     async def facet_summary(
         self,
-        form_id: ObjectId,
-        fields: list[FormField],
+        form_id: "ObjectId",
+        fields: "list[FormField]",
     ) -> dict[str, Any]:
         """Run the single-pass $facet analytics pipeline for a form.
 

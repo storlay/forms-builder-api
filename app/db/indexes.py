@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from pymongo import ASCENDING
 from pymongo import DESCENDING
-from pymongo.asynchronous.database import AsyncDatabase
 
 
-async def ensure_indexes(db: AsyncDatabase) -> None:
+if TYPE_CHECKING:
+    from pymongo.asynchronous.database import AsyncDatabase
+
+
+async def ensure_indexes(db: "AsyncDatabase") -> None:
     await db.users.create_index([("email", ASCENDING)], unique=True)
 
     await db.forms.create_index([("owner_id", ASCENDING), ("status", ASCENDING)])

@@ -8,12 +8,12 @@ from datetime import UTC
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
@@ -24,22 +24,27 @@ from app.core.exceptions import FormNotFound
 from app.core.exceptions import FormStateError
 from app.core.exceptions import ResponseValidationError
 from app.models.form import FieldType
-from app.models.form import Form
-from app.models.form import FormField
 from app.models.form import FormStatus
-from app.models.response import DraftResponse
-from app.models.response import Response
-from app.repositories.files_repo import FilesRepository
-from app.repositories.forms_repo import FormsRepository
-from app.repositories.responses_repo import ResponsesRepository
 from app.schemas.response import ExportFormat
+
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+    from app.models.form import Form
+    from app.models.form import FormField
+    from app.models.response import DraftResponse
+    from app.models.response import Response
+    from app.repositories.files_repo import FilesRepository
+    from app.repositories.forms_repo import FormsRepository
+    from app.repositories.responses_repo import ResponsesRepository
 
 
 # Basic email shape; full RFC validation is out of scope (no email-validator dep).
 _EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
 
-def _base_and_constraints(field: FormField) -> tuple[Any, dict[str, Any]]:
+def _base_and_constraints(field: "FormField") -> tuple[Any, dict[str, Any]]:
     """Map a form field to a Python type + Pydantic constraints from its validation."""
     v = field.validation
     constraints: dict[str, Any] = {}
@@ -82,7 +87,7 @@ def _base_and_constraints(field: FormField) -> tuple[Any, dict[str, Any]]:
     return base, constraints
 
 
-def _field_definition(field: FormField, *, partial: bool) -> tuple[Any, Any]:
+def _field_definition(field: "FormField", *, partial: bool) -> tuple[Any, Any]:
     base, constraints = _base_and_constraints(field)
     if field.required and not partial:
         return base, Field(**constraints)
@@ -90,10 +95,10 @@ def _field_definition(field: FormField, *, partial: bool) -> tuple[Any, Any]:
 
 
 def build_answer_model(
-    fields: list[FormField],
+    fields: "list[FormField]",
     *,
     partial: bool = False,
-) -> type[BaseModel]:
+) -> "type[BaseModel]":
     """Build a Pydantic model at runtime from a form's field definitions.
 
     Unknown keys are rejected (extra='forbid') so respondents cannot smuggle
@@ -118,7 +123,7 @@ def _format_errors(exc: ValidationError) -> list[dict[str, Any]]:
 
 
 def _validate_answers(
-    fields: list[FormField], answers: dict[str, Any], *, partial: bool = False
+    fields: "list[FormField]", answers: dict[str, Any], *, partial: bool = False
 ) -> dict[str, Any]:
     model = build_answer_model(fields, partial=partial)
     try:
@@ -128,7 +133,7 @@ def _validate_answers(
     return validated.model_dump(mode="json")
 
 
-def _encode_cursor(response: Response) -> str:
+def _encode_cursor(response: "Response") -> str:
     """Opaque keyset cursor carrying the last response's (submitted_at, _id)."""
     raw = f"{response.submitted_at.isoformat()}|{response.id}"
     return base64.urlsafe_b64encode(raw.encode()).decode()
@@ -163,7 +168,7 @@ def _csv_row(values: list[str]) -> str:
 
 async def _csv_stream(
     field_keys: list[str],
-    rows: AsyncIterator[Response],
+    rows: "AsyncIterator[Response]",
 ) -> AsyncIterator[str]:
     yield _csv_row(["id", "submitted_at", *field_keys])
     async for response in rows:
@@ -172,7 +177,7 @@ async def _csv_stream(
         yield _csv_row([str(response.id), response.submitted_at.isoformat(), *cells])
 
 
-async def _json_stream(rows: AsyncIterator[Response]) -> AsyncIterator[str]:
+async def _json_stream(rows: "AsyncIterator[Response]") -> AsyncIterator[str]:
     yield "["
     first = True
     async for response in rows:
@@ -190,15 +195,15 @@ async def _json_stream(rows: AsyncIterator[Response]) -> AsyncIterator[str]:
 class ResponseService:
     def __init__(
         self,
-        forms: FormsRepository,
-        responses: ResponsesRepository,
-        files: FilesRepository,
+        forms: "FormsRepository",
+        responses: "ResponsesRepository",
+        files: "FilesRepository",
     ) -> None:
         self._forms = forms
         self._responses = responses
         self._files = files
 
-    async def get_public_form(self, form_id: ObjectId) -> Form:
+    async def get_public_form(self, form_id: ObjectId) -> "Form":
         form = await self._forms.get_by_id(form_id)
         # Drafts are not publicly visible; treat as not found to avoid disclosure.
         if form is None or form.status == FormStatus.DRAFT:
@@ -211,7 +216,7 @@ class ResponseService:
         owner_id: ObjectId,
         limit: int,
         cursor: str | None,
-    ) -> tuple[list[Response], str | None]:
+    ) -> "tuple[list[Response], str | None]":
         form = await self._forms.get_by_id(form_id)
         # Not-found and not-owned both map to 404 so form existence is not disclosed.
         if form is None or form.owner_id != owner_id:
@@ -242,7 +247,7 @@ class ResponseService:
             return "text/csv", f"form_{form_id}.csv", _csv_stream(field_keys, rows)
         return "application/json", f"form_{form_id}.json", _json_stream(rows)
 
-    async def _load_accepting_form(self, form_id: ObjectId) -> Form:
+    async def _load_accepting_form(self, form_id: ObjectId) -> "Form":
         """Load a form that anonymous users may submit to, or raise."""
         form = await self._forms.get_by_id(form_id)
         if form is None or form.status == FormStatus.DRAFT:
@@ -253,7 +258,7 @@ class ResponseService:
 
     async def submit(
         self, form_id: ObjectId, answers: dict[str, Any], meta: dict[str, Any]
-    ) -> Response:
+    ) -> "Response":
         form = await self._load_accepting_form(form_id)
 
         validated = _validate_answers(form.fields, answers)
@@ -270,7 +275,7 @@ class ResponseService:
         self,
         form_id: ObjectId,
         answers: dict[str, Any],
-    ) -> DraftResponse:
+    ) -> "DraftResponse":
         """Persist a partial answer that expires (TTL) unless submitted in time."""
         form = await self._load_accepting_form(form_id)
 
@@ -286,7 +291,7 @@ class ResponseService:
     async def _resolve_files(
         self,
         form_id: ObjectId,
-        fields: list[FormField],
+        fields: "list[FormField]",
         validated: dict[str, Any],
     ) -> dict[str, Any]:
         """Replace each file field's id with {file_id, filename, size}.
