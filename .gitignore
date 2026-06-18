@@ -10,3 +10,6 @@ __pycache__/
 
 # Claude spec
 SPEC.md
+
+# Claude resp docs
+docs
